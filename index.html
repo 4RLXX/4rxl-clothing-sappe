@@ -174,6 +174,7 @@ footer{
       <input id="rawScriptLink" readonly placeholder="Le lien RAW apparaîtra ici" style="width:100%;background:#080808;color:#eee;border:1px solid #383838;border-radius:5px;padding:12px;font:12px Inter,Arial,sans-serif">
       <div class="generator-actions">
         <button id="copyRawLink" class="secondary" type="button">COPIER LE LIEN RAW</button>
+        <button id="copyStudioInstall" class="secondary" type="button">COPIER POUR ROBLOX STUDIO</button>
       </div>
       <div id="generatorStatus"></div>
     </section>
@@ -448,6 +449,21 @@ $("copyRawLink").addEventListener("click", async () => {
     } catch {
         $("rawScriptLink").select();
         $("generatorStatus").textContent = "Sélectionne le lien puis copie-le avec Ctrl+C.";
+    }
+});
+
+$("copyStudioInstall").addEventListener("click", async () => {
+    const link = $("rawScriptLink").value;
+    if (!link) {
+        $("generatorStatus").textContent = "Génère d'abord le script.";
+        return;
+    }
+    const instructions = "-- Roblox Studio : crée un LocalScript dans StarterPlayer > StarterPlayerScripts.\n-- Ouvre le lien RAW ci-dessous, copie son contenu, puis colle-le dans le LocalScript.\n-- " + link;
+    try {
+        await navigator.clipboard.writeText(instructions);
+        $("generatorStatus").textContent = "Instructions d'installation Studio copiées.";
+    } catch {
+        $("generatorStatus").textContent = "Copie impossible automatiquement. Utilise le lien RAW.";
     }
 });
 
