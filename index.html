@@ -175,7 +175,10 @@ footer{
       <div class="generator-actions">
         <button id="copyRawLink" class="secondary" type="button">COPIER LE LIEN RAW</button>
         <button id="copyStudioInstall" class="secondary" type="button">COPIER POUR ROBLOX STUDIO</button>
+        <button id="copyLoadstring" class="secondary" type="button">COPIER LE LOADSTRING</button>
       </div>
+      <label for="loadstringOutput">LOADSTRING</label>
+      <input id="loadstringOutput" readonly placeholder="Le loadstring apparaîtra après génération" style="width:100%;background:#080808;color:#eee;border:1px solid #383838;border-radius:5px;padding:12px;font:12px Consolas,monospace">
       <div id="generatorStatus"></div>
     </section>
 
@@ -412,6 +415,7 @@ $("generateScript").addEventListener("click", async () => {
     generateButton.textContent = "GÉNÉRATION…";
     status.textContent = "Envoi de la demande à 4RXL / GitHub…";
     $("rawScriptLink").value = "";
+    $("loadstringOutput").value = "";
     $("scriptOutput").value = "";
 
     try {
@@ -425,6 +429,7 @@ $("generateScript").addEventListener("click", async () => {
         }
 
         $("rawScriptLink").value = data.rawUrl;
+        $("loadstringOutput").value = data.loadstring || `loadstring(game:HttpGet("${data.rawUrl}"))()`;
         $("scriptOutput").value = await (await fetch(data.rawUrl, { cache: "no-store" })).text();
         status.textContent = "Fichier créé sur GitHub : " + data.path + " — lien RAW prêt.";
     } catch (error) {
@@ -434,6 +439,21 @@ $("generateScript").addEventListener("click", async () => {
     } finally {
         generateButton.disabled = false;
         generateButton.textContent = "GÉNÉRER LE SCRIPT";
+    }
+});
+
+$("copyLoadstring").addEventListener("click", async () => {
+    const value = $("loadstringOutput").value;
+    if (!value) {
+        $("generatorStatus").textContent = "Génère d'abord le script.";
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(value);
+        $("generatorStatus").textContent = "Loadstring copié.";
+    } catch {
+        $("loadstringOutput").select();
+        $("generatorStatus").textContent = "Sélectionne le loadstring puis copie-le avec Ctrl+C.";
     }
 });
 
