@@ -170,6 +170,11 @@ footer{
       </div>
       <label for="scriptOutput">SCRIPT LUAU — ROBLOX STUDIO</label>
       <textarea id="scriptOutput" readonly spellcheck="false" placeholder="Clique sur GÉNÉRER LE SCRIPT…"></textarea>
+      <label for="rawScriptLink">LIEN RAW DU SCRIPT GÉNÉRÉ</label>
+      <input id="rawScriptLink" readonly placeholder="Le lien RAW apparaîtra ici" style="width:100%;background:#080808;color:#eee;border:1px solid #383838;border-radius:5px;padding:12px;font:12px Inter,Arial,sans-serif">
+      <div class="generator-actions">
+        <button id="copyRawLink" class="secondary" type="button">COPIER LE LIEN RAW</button>
+      </div>
       <div id="generatorStatus"></div>
     </section>
 
@@ -385,6 +390,81 @@ $("savePrivateOutfit").addEventListener("click", async () => {
 });
 
 $("refreshPrivateOutfits").addEventListener("click", loadPrivateOutfits);
+
+// ======================================
+// 4RXL - GÉNÉRATION VIA EDGE FUNCTION
+// ======================================
+$("generateScript").addEventListener("click", async () => {
+    const status = $("generatorStatus");
+    const generateButton = $("generateScript");
+    if (!supabaseClient || !currentUserId) {
+        status.textContent = "Connexion Supabase non prête. Actualise la page et réessaie.";
+        return;
+    }
+
+    if ($("templateSelect").value !== "clothing") {
+        status.textContent = "Ce modèle n'est pas encore disponible pour la génération GitHub.";
+        return;
+    }
+
+    generateButton.disabled = true;
+    generateButton.textContent = "GÉNÉRATION…";
+    status.textContent = "Envoi de la demande à 4RXL / GitHub…";
+    $("rawScriptLink").value = "";
+    $("scriptOutput").value = "";
+
+    try {
+        const { data, error } = await supabaseClient.functions.invoke("generate-script", {
+            body: { template: "clothing" }
+        });
+
+        if (error) throw error;
+        if (!data || !data.success || !data.rawUrl) {
+            throw new Error(data?.error || "Réponse invalide du serveur.");
+        }
+
+        $("rawScriptLink").value = data.rawUrl;
+        $("scriptOutput").value = await (await fetch(data.rawUrl, { cache: "no-store" })).text();
+        status.textContent = "Fichier créé sur GitHub : " + data.path + " — lien RAW prêt.";
+    } catch (error) {
+        console.error("4RXL GitHub generation:", error);
+        status.textContent = "Échec : " + (error.message || "Erreur inconnue") +
+            ". Vérifie le déploiement de la fonction generate-script.";
+    } finally {
+        generateButton.disabled = false;
+        generateButton.textContent = "GÉNÉRER LE SCRIPT";
+    }
+});
+
+$("copyRawLink").addEventListener("click", async () => {
+    const link = $("rawScriptLink").value;
+    if (!link) {
+        $("generatorStatus").textContent = "Génère d'abord le script.";
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(link);
+        $("generatorStatus").textContent = "Lien RAW copié.";
+    } catch {
+        $("rawScriptLink").select();
+        $("generatorStatus").textContent = "Sélectionne le lien puis copie-le avec Ctrl+C.";
+    }
+});
+
+$("copyScript").addEventListener("click", async () => {
+    const value = $("scriptOutput").value;
+    if (!value) {
+        $("generatorStatus").textContent = "Génère d'abord le script.";
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(value);
+        $("generatorStatus").textContent = "Script copié.";
+    } catch {
+        $("scriptOutput").select();
+        $("generatorStatus").textContent = "Sélectionne le script puis copie-le avec Ctrl+C.";
+    }
+});
 
 init4RXL();
   
