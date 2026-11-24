@@ -162,6 +162,48 @@ function chooseMode(mode){
 }
 $("public").addEventListener("click",()=>chooseMode("PUBLIC"));
 $("private").addEventListener("click",()=>chooseMode("PRIVATE"));
+  
+// ======================================
+// 4RXL - CONNEXION SUPABASE
+// ======================================
+
+let supabaseClient = null;
+let currentUserId = null;
+
+async function init4RXL() {
+    try {
+        const { createClient } = await import(
+            "https://esm.sh/@supabase/supabase-js@2"
+        );
+
+        const SUPABASE_URL =
+            "https://opbyvsvrjligibpdpdag.supabase.co";
+
+        const SUPABASE_KEY =
+            "sb_publishable_HSCxQU3j_33YpucKnlI2qw_TJGv2ie-";
+
+        supabaseClient = createClient(
+            SUPABASE_URL,
+            SUPABASE_KEY
+        );
+
+        const { data, error } =
+            await supabaseClient.auth.signInAnonymously();
+
+        if (error) throw error;
+
+        currentUserId = data.user.id;
+
+        console.log("4RXL connecté !");
+        console.log("Identifiant utilisateur :", currentUserId);
+
+    } catch (error) {
+        console.error("Erreur Supabase 4RXL :", error.message);
+    }
+}
+
+init4RXL();
+  
 </script>
 </body>
 </html>
