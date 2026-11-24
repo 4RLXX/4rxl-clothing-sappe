@@ -97,6 +97,21 @@ footer{
 .generator-actions button{background:#eee;color:#080808;border:0;border-radius:5px;padding:12px 16px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer}
 .generator-actions button.secondary{background:#222;color:#eee;border:1px solid #444}
 #generatorStatus{font-size:11px;color:#aaa;margin-top:12px;min-height:16px}
+#privateVault{display:none;margin:18px auto 0;max-width:650px;text-align:left;background:#0d0d0d;border:1px solid #383838;border-radius:9px;padding:22px}
+#privateVault.show{display:block;animation:appear .35s ease}
+#privateVault h3{font-family:Orbitron,sans-serif;font-size:15px;letter-spacing:2px;margin-bottom:8px}
+#privateVault p{font-size:12px;color:#999;line-height:1.7;margin-bottom:14px}
+#privateVault label{display:block;font-size:11px;color:#aaa;letter-spacing:1px;margin:12px 0 7px}
+#privateVault input{width:100%;background:#080808;color:#eee;border:1px solid #383838;border-radius:5px;padding:12px;font:12px Inter,Arial,sans-serif}
+#privateVault button{background:#eee;color:#080808;border:0;border-radius:5px;padding:11px 14px;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer}
+#privateVault button.delete{background:#292020;color:#ffb5b5;border:1px solid #503333}
+#privateOutfits{display:grid;gap:9px;margin-top:16px}
+.private-outfit{border:1px solid #303030;border-radius:6px;padding:12px;background:#111}
+.private-outfit strong{font-size:12px;display:block;margin-bottom:7px}
+.private-outfit small{display:block;color:#999;font-size:11px;line-height:1.6;margin-bottom:10px}
+.private-outfit-actions{display:flex;gap:8px;flex-wrap:wrap}
+#privateStatus{font-size:11px;color:#aaa;min-height:16px;margin-top:12px}
+@media(max-width:500px){#privateVault{padding:16px}}
 @media(max-width:500px){
   header{padding:0 20px}
   .modes{grid-template-columns:1fr}
@@ -157,6 +172,23 @@ footer{
       <textarea id="scriptOutput" readonly spellcheck="false" placeholder="Clique sur GÉNÉRER LE SCRIPT…"></textarea>
       <div id="generatorStatus"></div>
     </section>
+
+    <section id="privateVault">
+      <h3>PRIVATE SKIN VAULT</h3>
+      <p id="vaultDescription">Tes outfits sont enregistrés dans ton compte 4RXL. Les règles RLS de Supabase doivent limiter chaque compte à ses propres lignes.</p>
+      <label for="outfitName">NOM DE L'OUTFIT</label>
+      <input id="outfitName" maxlength="40" placeholder="Ex. Mon outfit noir">
+      <label for="vaultShirt">SHIRT ASSET ID</label>
+      <input id="vaultShirt" inputmode="numeric" placeholder="ID du shirt">
+      <label for="vaultPants">PANTS ASSET ID</label>
+      <input id="vaultPants" inputmode="numeric" placeholder="ID du pantalon">
+      <div class="generator-actions">
+        <button id="savePrivateOutfit">ENREGISTRER</button>
+        <button id="refreshPrivateOutfits" class="secondary">ACTUALISER</button>
+      </div>
+      <div id="privateStatus"></div>
+      <div id="privateOutfits"></div>
+    </section>
   </section>
 </main>
 
@@ -184,13 +216,18 @@ $("language").addEventListener("click",()=>{
   $("language").textContent=english?"EN / FR":"FR / EN";
 });
 
+let selectedMode = "PUBLIC";
+
 function chooseMode(mode){
+  selectedMode = mode;
   $("notice").textContent=english
-    ?mode+" mode selected. Studio generator ready."
-    :"Mode "+mode+" sélectionné. Générateur Studio prêt.";
+    ?mode+" mode selected. "+(mode === "PRIVATE" ? "Your private outfit vault is enabled." : "Studio generator ready.")
+    :"Mode "+mode+" sélectionné. "+(mode === "PRIVATE" ? "Ton espace privé est activé." : "Générateur Studio prêt.");
   $("notice").classList.add("show");
   $("generator").classList.add("show");
+  $("privateVault").classList.toggle("show", mode === "PRIVATE");
   $("generator").scrollIntoView({behavior:"smooth",block:"nearest"});
+  if (mode === "PRIVATE") loadPrivateOutfits();
 }
 $("public").addEventListener("click",()=>chooseMode("PUBLIC"));
 $("private").addEventListener("click",()=>chooseMode("PRIVATE"));
@@ -231,8 +268,123 @@ async function init4RXL() {
 
     } catch (error) {
         console.error("Erreur Supabase 4RXL :", error.message);
+        $("privateStatus").textContent = "Connexion Supabase impossible : " + error.message;
     }
 }
+
+function validAssetId(value) {
+    const cleaned = value.trim().replace(/^rbxassetid:\/\//i, "");
+    return cleaned === "" || /^\\d+$/.test(cleaned) ? cleaned : null;
+}
+
+async function loadPrivateOutfits() {
+    const status = $("privateStatus");
+    const list = $("privateOutfits");
+    if (!supabaseClient || !currentUserId) {
+        status.textContent = "Connexion en cours… Réessaie dans quelques secondes.";
+        return;
+    }
+
+    status.textContent = "Chargement de tes outfits privés…";
+    list.replaceChildren();
+
+    const { data, error } = await supabaseClient
+        .from("saved_outfits")
+        .select("id,outfit_name,shirt_id,pants_id,created_at")
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        status.textContent = "Erreur de lecture : " + error.message + ". Vérifie les policies RLS de saved_outfits.";
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        status.textContent = "Aucun outfit privé enregistré pour le moment.";
+        return;
+    }
+
+    status.textContent = data.length + " outfit(s) dans ton espace privé.";
+    data.forEach(outfit => {
+        const card = document.createElement("article");
+        card.className = "private-outfit";
+        const name = document.createElement("strong");
+        name.textContent = outfit.outfit_name || "Outfit sans nom";
+        const details = document.createElement("small");
+        details.textContent = "Shirt : " + (outfit.shirt_id || "—") + " · Pants : " + (outfit.pants_id || "—");
+        const actions = document.createElement("div");
+        actions.className = "private-outfit-actions";
+        const useButton = document.createElement("button");
+        useButton.textContent = "UTILISER";
+        useButton.addEventListener("click", () => {
+            $("vaultShirt").value = outfit.shirt_id || "";
+            $("vaultPants").value = outfit.pants_id || "";
+            $("templateSelect").value = "clothing";
+            $("scriptOutput").value = clothingStudioScript;
+            $("generatorStatus").textContent = "IDs chargés depuis ton espace privé. Colle-les dans ton jeu via le tester.";
+            $("generator").scrollIntoView({behavior:"smooth",block:"nearest"});
+        });
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "delete";
+        deleteButton.textContent = "SUPPRIMER";
+        deleteButton.addEventListener("click", async () => {
+            const { error: deleteError } = await supabaseClient
+                .from("saved_outfits")
+                .delete()
+                .eq("id", outfit.id);
+            if (deleteError) {
+                status.textContent = "Suppression impossible : " + deleteError.message;
+                return;
+            }
+            loadPrivateOutfits();
+        });
+        actions.append(useButton, deleteButton);
+        card.append(name, details, actions);
+        list.append(card);
+    });
+}
+
+$("savePrivateOutfit").addEventListener("click", async () => {
+    const status = $("privateStatus");
+    if (!supabaseClient || !currentUserId) {
+        status.textContent = "Connexion Supabase non prête. Réessaie dans quelques secondes.";
+        return;
+    }
+    const name = $("outfitName").value.trim();
+    const shirt = validAssetId($("vaultShirt").value);
+    const pants = validAssetId($("vaultPants").value);
+
+    if (!name) {
+        status.textContent = "Entre un nom pour ton outfit.";
+        return;
+    }
+    if (shirt === null || pants === null) {
+        status.textContent = "Les IDs doivent contenir uniquement des chiffres.";
+        return;
+    }
+    if (!shirt && !pants) {
+        status.textContent = "Ajoute au moins un ID de shirt ou de pantalon.";
+        return;
+    }
+
+    status.textContent = "Enregistrement…";
+    const { error } = await supabaseClient.from("saved_outfits").insert({
+        user_id: currentUserId,
+        outfit_name: name,
+        shirt_id: shirt || null,
+        pants_id: pants || null,
+        accessories: []
+    });
+
+    if (error) {
+        status.textContent = "Enregistrement refusé : " + error.message + ". Vérifie les policies RLS.";
+        return;
+    }
+    $("outfitName").value = "";
+    status.textContent = "Outfit enregistré dans ton espace privé.";
+    loadPrivateOutfits();
+});
+
+$("refreshPrivateOutfits").addEventListener("click", loadPrivateOutfits);
 
 init4RXL();
   
