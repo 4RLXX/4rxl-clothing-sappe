@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4RXL Clothing / Sappe</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  min-height:100vh;background:#050505;color:#fff;
+  font-family:Inter,Arial,sans-serif;overflow-x:hidden;
+}
+.background{
+  position:fixed;inset:0;z-index:-2;overflow:hidden;
+  background:
+    radial-gradient(ellipse at 20% 20%,#24242455,transparent 42%),
+    radial-gradient(ellipse at 80% 75%,#30303033,transparent 45%),
+    #050505;
+}
+.background:before,.background:after{
+  content:"";position:absolute;width:70vw;height:70vw;
+  border-radius:50%;filter:blur(90px);opacity:.12;
+  background:radial-gradient(circle,#aaa 0%,#444 28%,transparent 68%);
+  animation:drift 18s ease-in-out infinite alternate;
+}
+.background:before{top:-35vw;left:-20vw}
+.background:after{bottom:-40vw;right:-20vw;animation-delay:-9s}
+@keyframes drift{
+  from{transform:translate(0,0) scale(.85)}
+  to{transform:translate(12vw,8vh) scale(1.15)}
+}
+.noise{
+  position:fixed;inset:0;z-index:-1;pointer-events:none;
+  opacity:.09;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+}
+header{
+  height:78px;padding:0 7%;display:flex;align-items:center;
+  justify-content:space-between;border-bottom:1px solid #ffffff12;
+}
+.brand{font-family:Orbitron,sans-serif;font-weight:800;font-size:20px;letter-spacing:3px}
+.lang{
+  background:transparent;border:1px solid #444;color:#ddd;
+  padding:9px 14px;border-radius:6px;cursor:pointer;
+}
+main{
+  min-height:calc(100vh - 130px);display:flex;align-items:center;
+  justify-content:center;text-align:center;padding:55px 20px;
+}
+.content{max-width:750px;width:100%}
+.tag{
+  color:#888;font-size:11px;letter-spacing:4px;
+  text-transform:uppercase;margin-bottom:25px;
+}
+h1{
+  font-family:Orbitron,sans-serif;font-size:clamp(38px,8vw,76px);
+  letter-spacing:5px;font-weight:800;margin-bottom:17px;
+}
+.subtitle{color:#999;font-size:15px;line-height:1.8;margin-bottom:42px}
+.cta{
+  display:inline-block;background:#f2f2f2;color:#080808;
+  border:0;padding:19px 27px;border-radius:5px;
+  font-size:12px;font-weight:800;letter-spacing:1.5px;
+  cursor:pointer;transition:.25s;
+}
+.cta:hover{background:#fff;transform:translateY(-3px);box-shadow:0 10px 35px #ffffff20}
+.modes{
+  display:none;grid-template-columns:1fr 1fr;gap:14px;
+  margin:28px auto 0;max-width:480px;
+}
+.modes.show{display:grid;animation:appear .35s ease}
+.mode{
+  padding:23px 15px;border:1px solid #383838;
+  border-radius:7px;background:#101010;color:white;
+  cursor:pointer;transition:.2s;
+}
+.mode:hover{border-color:#aaa;background:#181818}
+.mode strong{display:block;font-size:14px;letter-spacing:2px;margin-bottom:9px}
+.mode span{font-size:11px;color:#888}
+.notice{display:none;color:#aaa;font-size:12px;line-height:1.7;margin:22px auto 0;max-width:430px}
+.notice.show{display:block}
+@keyframes appear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+footer{
+  padding:20px;text-align:center;color:#555;font-size:10px;
+  letter-spacing:2px;border-top:1px solid #ffffff10;
+}
+@media(max-width:500px){
+  header{padding:0 20px}
+  .modes{grid-template-columns:1fr}
+  .cta{width:100%;font-size:11px}
+}
+</style>
+</head>
+<body>
+<div class="background"></div>
+<div class="noise"></div>
+
+<header>
+  <div class="brand">4RXL</div>
+  <button class="lang" id="language">EN / FR</button>
+</header>
+
+<main>
+  <section class="content">
+    <div class="tag" id="tag">ROBLOX CLOTHING GENERATOR</div>
+    <h1>4RXL</h1>
+    <p class="subtitle" id="subtitle">
+      Create your own clothing configuration.<br>
+      Customize your experience.
+    </p>
+
+    <button class="cta" id="start">
+      CLICK HERE TO GET YOUR SCRIPT
+    </button>
+
+    <div class="modes" id="modes">
+      <button class="mode" id="public">
+        <strong>PUBLIC</strong>
+        <span id="publicText">Shared service</span>
+      </button>
+      <button class="mode" id="private">
+        <strong>PRIVATE</strong>
+        <span id="privateText">Independent service</span>
+      </button>
+    </div>
+
+    <p class="notice" id="notice"></p>
+  </section>
+</main>
+
+<footer>4RXL CLOTHING / SAPPE · 2026</footer>
+
+<script>
+let english=true;
+const $=id=>document.getElementById(id);
+
+$("start").addEventListener("click",()=>{
+  $("modes").classList.toggle("show");
+  $("notice").classList.remove("show");
+});
+
+$("language").addEventListener("click",()=>{
+  english=!english;
+  document.documentElement.lang=english?"en":"fr";
+  $("tag").textContent=english?"ROBLOX CLOTHING GENERATOR":"GÉNÉRATEUR DE VÊTEMENTS ROBLOX";
+  $("subtitle").innerHTML=english
+    ?"Create your own clothing configuration.<br>Customize your experience."
+    :"Crée ta propre configuration de vêtements.<br>Personnalise ton expérience.";
+  $("start").textContent=english?"CLICK HERE TO GET YOUR SCRIPT":"CLIQUE ICI POUR OBTENIR TON SCRIPT";
+  $("publicText").textContent=english?"Shared service":"Service partagé";
+  $("privateText").textContent=english?"Independent service":"Service indépendant";
+  $("language").textContent=english?"EN / FR":"FR / EN";
+});
+
+function chooseMode(mode){
+  $("notice").textContent=english
+    ?mode+" mode selected. The script generator will be connected in the next setup step."
+    :"Mode "+mode+" sélectionné. Le générateur de scripts sera connecté lors de la prochaine étape.";
+  $("notice").classList.add("show");
+}
+$("public").addEventListener("click",()=>chooseMode("PUBLIC"));
+$("private").addEventListener("click",()=>chooseMode("PRIVATE"));
+</script>
+</body>
+</html>
