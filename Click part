@@ -1,57 +1,89 @@
 
 --==================================================
--- TELEPORT TESTER
--- MOBILE COMPACT EDITION
+-- TELEPORT TESTER + SAVED PARTS
 -- 100% LOCALSCRIPT
+-- PC + MOBILE
 --==================================================
 
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
+local UIS = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local mouse = player:GetMouse()
 
 local selectedPart = nil
 local selecting = false
+local savedParts = {}
 
--- GUI
+--==================================================
+-- SCREEN GUI
+--==================================================
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "TeleportTesterGUI"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 gui.Parent = playerGui
 
--- MAIN FRAME
-local main = Instance.new("Frame")
-main.Name = "Main"
-main.Size = UDim2.fromOffset(210,230)
-main.Position = UDim2.new(0.5,0,0.5,0)
-main.AnchorPoint = Vector2.new(0.5,0.5)
-main.BackgroundColor3 = Color3.fromRGB(24,24,24)
-main.BorderSizePixel = 0
-main.Parent = gui
+--==================================================
+-- DRAG SYSTEM
+--==================================================
 
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0,12)
-mainCorner.Parent = main
+local function makeDraggable(frame, handle)
 
--- TITLE
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,0,0,30)
-title.BackgroundColor3 = Color3.fromRGB(35,35,35)
-title.Text = "TELEPORT TESTER"
-title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 12
-title.BorderSizePixel = 0
-title.Parent = main
+    local dragging = false
+    local dragStart
+    local startPosition
+    local dragInput
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0,10)
-titleCorner.Parent = title
+    handle.InputBegan:Connect(function(input)
 
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+
+            dragging = true
+            dragStart = input.Position
+            startPosition = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    handle.InputChanged:Connect(function(input)
+
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+
+            dragInput = input
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+
+        if dragging and input == dragInput then
+
+            local delta = input.Position - dragStart
+
+            frame.Position = UDim2.new(
+                startPosition.X.Scale,
+                startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale,
+                startPosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+--==================================================
 -- BUTTON CREATOR
-local function createButton(name,text,y,height,color)
+--==================================================
+
+local function createButton(parent, name, text, y, height, color)
 
     local button = Instance.new("TextButton")
     button.Name = name
@@ -64,7 +96,7 @@ local function createButton(name,text,y,height,color)
     button.TextSize = 11
     button.BorderSizePixel = 0
     button.AutoButtonColor = true
-    button.Parent = main
+    button.Parent = parent
 
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0,7)
@@ -73,31 +105,54 @@ local function createButton(name,text,y,height,color)
     return button
 end
 
--- SELECT BUTTON
+--==================================================
+-- MAIN WINDOW
+--==================================================
+
+local main = Instance.new("Frame")
+main.Name = "TeleportTester"
+main.Size = UDim2.fromOffset(210,302)
+main.Position = UDim2.new(0.5,0,0.5,0)
+main.AnchorPoint = Vector2.new(0.5,0.5)
+main.BackgroundColor3 = Color3.fromRGB(24,24,24)
+main.BorderSizePixel = 0
+main.Parent = gui
+
+Instance.new("UICorner",main).CornerRadius = UDim.new(0,12)
+
+-- TITLE
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,32)
+title.BackgroundColor3 = Color3.fromRGB(35,35,35)
+title.Text = "TELEPORT TESTER"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 12
+title.BorderSizePixel = 0
+title.Parent = main
+
+Instance.new("UICorner",title).CornerRadius = UDim.new(0,10)
+
+makeDraggable(main,title)
+
+-- SELECT
 local selectButton = createButton(
-    "SelectPart",
-    "SELECT PART",
-    40,
-    30,
-    Color3.fromRGB(55,110,180)
+    main,"SelectPart","SELECT PART",
+    40,30,Color3.fromRGB(55,110,180)
 )
 
 -- PREVIEW
 local preview = Instance.new("Frame")
-preview.Name = "Preview"
-preview.Size = UDim2.new(1,-20,0,65)
-preview.Position = UDim2.fromOffset(10,80)
+preview.Size = UDim2.new(1,-20,0,68)
+preview.Position = UDim2.fromOffset(10,78)
 preview.BackgroundColor3 = Color3.fromRGB(38,38,38)
 preview.BorderSizePixel = 0
 preview.Parent = main
 
-local previewCorner = Instance.new("UICorner")
-previewCorner.CornerRadius = UDim.new(0,8)
-previewCorner.Parent = preview
+Instance.new("UICorner",preview).CornerRadius = UDim.new(0,8)
 
--- PART NAME
 local partName = Instance.new("TextLabel")
-partName.Size = UDim2.new(1,-10,0,25)
+partName.Size = UDim2.new(1,-10,0,27)
 partName.Position = UDim2.fromOffset(5,3)
 partName.BackgroundTransparency = 1
 partName.Text = "No Part Selected"
@@ -107,10 +162,9 @@ partName.TextSize = 11
 partName.TextWrapped = true
 partName.Parent = preview
 
--- COORDINATES
 local coordinates = Instance.new("TextLabel")
 coordinates.Size = UDim2.new(1,-10,0,25)
-coordinates.Position = UDim2.fromOffset(5,33)
+coordinates.Position = UDim2.fromOffset(5,35)
 coordinates.BackgroundTransparency = 1
 coordinates.Text = "X: - | Y: - | Z: -"
 coordinates.TextColor3 = Color3.fromRGB(180,180,180)
@@ -118,40 +172,243 @@ coordinates.Font = Enum.Font.Gotham
 coordinates.TextSize = 9
 coordinates.Parent = preview
 
--- TELEPORT BUTTON
+-- SAVE PART
+local saveButton = createButton(
+    main,"SavePart","SAVE PART",
+    155,28,Color3.fromRGB(115,75,165)
+)
+
+-- TELEPORT
 local teleportButton = createButton(
-    "Teleport",
-    "TELEPORT",
-    153,
-    28,
-    Color3.fromRGB(45,145,85)
+    main,"Teleport","TELEPORT",
+    190,28,Color3.fromRGB(45,145,85)
 )
 
--- CLOSE BUTTON
+-- SAVED PARTS OPEN
+local savedButton = createButton(
+    main,"SavedParts","SAVED PARTS",
+    225,28,Color3.fromRGB(55,110,180)
+)
+
+-- CLOSE MAIN
 local closeButton = createButton(
-    "Close",
-    "CLOSE",
-    190,
-    25,
-    Color3.fromRGB(160,55,55)
+    main,"Close","CLOSE",
+    260,27,Color3.fromRGB(160,55,55)
 )
 
--- SELECT MODE
-selectButton.Activated:Connect(function()
+closeButton.Activated:Connect(function()
+    main.Visible = false
+end)
 
-    selecting = not selecting
+--==================================================
+-- SAVED PARTS WINDOW
+--==================================================
 
-    if selecting then
-        selectButton.Text = "TAP ON A PART..."
-        selectButton.BackgroundColor3 = Color3.fromRGB(180,110,40)
-    else
-        selectButton.Text = "SELECT PART"
-        selectButton.BackgroundColor3 = Color3.fromRGB(55,110,180)
+local savedFrame = Instance.new("Frame")
+savedFrame.Name = "SavedPartsWindow"
+savedFrame.Size = UDim2.fromOffset(220,300)
+savedFrame.Position = UDim2.new(0.5,115,0.5,0)
+savedFrame.AnchorPoint = Vector2.new(0.5,0.5)
+savedFrame.BackgroundColor3 = Color3.fromRGB(24,24,24)
+savedFrame.BorderSizePixel = 0
+savedFrame.Visible = false
+savedFrame.Parent = gui
+
+Instance.new("UICorner",savedFrame).CornerRadius = UDim.new(0,12)
+
+-- SAVED TITLE
+local savedTitle = Instance.new("TextLabel")
+savedTitle.Size = UDim2.new(1,0,0,32)
+savedTitle.BackgroundColor3 = Color3.fromRGB(35,35,35)
+savedTitle.Text = "SAVED PARTS"
+savedTitle.TextColor3 = Color3.new(1,1,1)
+savedTitle.Font = Enum.Font.GothamBold
+savedTitle.TextSize = 12
+savedTitle.BorderSizePixel = 0
+savedTitle.Parent = savedFrame
+
+Instance.new("UICorner",savedTitle).CornerRadius = UDim.new(0,10)
+
+makeDraggable(savedFrame,savedTitle)
+
+-- COUNT
+local countLabel = Instance.new("TextLabel")
+countLabel.Size = UDim2.new(1,-20,0,20)
+countLabel.Position = UDim2.fromOffset(10,35)
+countLabel.BackgroundTransparency = 1
+countLabel.Text = "0 SAVED"
+countLabel.TextColor3 = Color3.fromRGB(170,170,170)
+countLabel.Font = Enum.Font.GothamBold
+countLabel.TextSize = 10
+countLabel.Parent = savedFrame
+
+-- SCROLLING LIST
+local list = Instance.new("ScrollingFrame")
+list.Name = "PartsList"
+list.Size = UDim2.new(1,-20,0,195)
+list.Position = UDim2.fromOffset(10,58)
+list.BackgroundColor3 = Color3.fromRGB(32,32,32)
+list.BorderSizePixel = 0
+list.ScrollBarThickness = 3
+list.CanvasSize = UDim2.new(0,0,0,0)
+list.Parent = savedFrame
+
+Instance.new("UICorner",list).CornerRadius = UDim.new(0,7)
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0,6)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = list
+
+local listPadding = Instance.new("UIPadding")
+listPadding.PaddingTop = UDim.new(0,6)
+listPadding.PaddingLeft = UDim.new(0,5)
+listPadding.PaddingRight = UDim.new(0,5)
+listPadding.Parent = list
+
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    list.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 12)
+end)
+
+-- CLOSE SAVED WINDOW
+local closeSaved = createButton(
+    savedFrame,"CloseSaved","CLOSE",
+    263,27,Color3.fromRGB(160,55,55)
+)
+
+closeSaved.Activated:Connect(function()
+    savedFrame.Visible = false
+end)
+
+--==================================================
+-- REFRESH SAVED PARTS
+--==================================================
+
+local function refreshSavedParts()
+
+    for _,child in ipairs(list:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+
+    countLabel.Text = #savedParts .. " SAVED"
+
+    for index,entry in ipairs(savedParts) do
+
+        local part = entry.part
+
+        local row = Instance.new("Frame")
+        row.Name = "SavedPart_"..index
+        row.Size = UDim2.new(1,0,0,55)
+        row.BackgroundColor3 = Color3.fromRGB(48,48,48)
+        row.BorderSizePixel = 0
+        row.LayoutOrder = index
+        row.Parent = list
+
+        Instance.new("UICorner",row).CornerRadius = UDim.new(0,6)
+
+        local name = Instance.new("TextLabel")
+        name.Size = UDim2.new(1,-10,0,18)
+        name.Position = UDim2.fromOffset(5,2)
+        name.BackgroundTransparency = 1
+        name.Text = entry.name
+        name.TextColor3 = Color3.new(1,1,1)
+        name.Font = Enum.Font.GothamBold
+        name.TextSize = 10
+        name.TextXAlignment = Enum.TextXAlignment.Left
+        name.TextTruncate = Enum.TextTruncate.AtEnd
+        name.Parent = row
+
+        local status = Instance.new("TextLabel")
+        status.Size = UDim2.new(1,-10,0,13)
+        status.Position = UDim2.fromOffset(5,20)
+        status.BackgroundTransparency = 1
+
+        if part and part:IsDescendantOf(workspace) then
+            status.Text = "X: "..math.floor(part.Position.X)
+                .."  Y: "..math.floor(part.Position.Y)
+                .."  Z: "..math.floor(part.Position.Z)
+        else
+            status.Text = "PART UNAVAILABLE"
+        end
+
+        status.TextColor3 = Color3.fromRGB(175,175,175)
+        status.Font = Enum.Font.Gotham
+        status.TextSize = 8
+        status.TextXAlignment = Enum.TextXAlignment.Left
+        status.Parent = row
+
+        -- TELEPORT BUTTON
+        local tp = Instance.new("TextButton")
+        tp.Size = UDim2.fromOffset(65,18)
+        tp.Position = UDim2.new(0,5,1,-20)
+        tp.BackgroundColor3 = Color3.fromRGB(45,145,85)
+        tp.Text = "TELEPORT"
+        tp.TextColor3 = Color3.new(1,1,1)
+        tp.Font = Enum.Font.GothamBold
+        tp.TextSize = 8
+        tp.Parent = row
+
+        Instance.new("UICorner",tp).CornerRadius = UDim.new(0,4)
+
+        tp.Activated:Connect(function()
+
+            if not part or not part:IsDescendantOf(workspace) then
+                status.Text = "PART UNAVAILABLE"
+                return
+            end
+
+            local character = player.Character
+            local root = character and character:FindFirstChild("HumanoidRootPart")
+
+            if root then
+                root.CFrame = part.CFrame * CFrame.new(
+                    0,part.Size.Y/2 + 4,0
+                )
+            end
+        end)
+
+        -- DELETE BUTTON
+        local delete = Instance.new("TextButton")
+        delete.Size = UDim2.fromOffset(55,18)
+        delete.Position = UDim2.new(1,-60,1,-20)
+        delete.BackgroundColor3 = Color3.fromRGB(160,55,55)
+        delete.Text = "DELETE"
+        delete.TextColor3 = Color3.new(1,1,1)
+        delete.Font = Enum.Font.GothamBold
+        delete.TextSize = 8
+        delete.Parent = row
+
+        Instance.new("UICorner",delete).CornerRadius = UDim.new(0,4)
+
+        delete.Activated:Connect(function()
+
+            table.remove(savedParts,index)
+            refreshSavedParts()
+
+        end)
+    end
+end
+
+--==================================================
+-- OPEN SAVED PARTS
+--==================================================
+
+savedButton.Activated:Connect(function()
+
+    savedFrame.Visible = not savedFrame.Visible
+
+    if savedFrame.Visible then
+        refreshSavedParts()
     end
 
 end)
 
--- PART SELECTION
+--==================================================
+-- SELECT PART
+--==================================================
+
 local function selectTarget(target)
 
     if not selecting then return end
@@ -174,12 +431,22 @@ local function selectTarget(target)
         "X: %.1f | Y: %.1f | Z: %.1f",
         p.X,p.Y,p.Z
     )
-
 end
 
--- PC SELECTION
-local mouse = player:GetMouse()
+selectButton.Activated:Connect(function()
 
+    selecting = not selecting
+
+    if selecting then
+        selectButton.Text = "TAP ON A PART..."
+        selectButton.BackgroundColor3 = Color3.fromRGB(180,110,40)
+    else
+        selectButton.Text = "SELECT PART"
+        selectButton.BackgroundColor3 = Color3.fromRGB(55,110,180)
+    end
+end)
+
+-- PC
 mouse.Button1Down:Connect(function()
 
     if not selecting then return end
@@ -188,19 +455,18 @@ mouse.Button1Down:Connect(function()
 
 end)
 
--- MOBILE SELECTION
-UserInputService.TouchTap:Connect(function(touchPositions, gameProcessed)
+-- MOBILE
+UIS.TouchTap:Connect(function(positions,gameProcessed)
 
-    if not selecting then return end
-    if gameProcessed then return end
+    if not selecting or gameProcessed then return end
 
     local camera = workspace.CurrentCamera
     if not camera then return end
 
-    local position = touchPositions[1]
+    local position = positions[1]
     if not position then return end
 
-    local ray = camera:ViewportPointToRay(
+    local ray = camera:ScreenPointToRay(
         position.X,
         position.Y
     )
@@ -224,33 +490,76 @@ UserInputService.TouchTap:Connect(function(touchPositions, gameProcessed)
 
 end)
 
--- TELEPORT
+--==================================================
+-- SAVE PART
+--==================================================
+
+saveButton.Activated:Connect(function()
+
+    if not selectedPart or not selectedPart:IsDescendantOf(workspace) then
+        partName.Text = "SELECT A PART FIRST!"
+        return
+    end
+
+    -- Avoid duplicates
+    for _,entry in ipairs(savedParts) do
+
+        if entry.part == selectedPart then
+            partName.Text = "ALREADY SAVED!"
+            return
+        end
+    end
+
+    table.insert(savedParts,{
+        part = selectedPart,
+        name = selectedPart.Name
+    })
+
+    partName.Text = "PART SAVED!"
+
+    refreshSavedParts()
+end)
+
+--==================================================
+-- MAIN TELEPORT
+--==================================================
+
 teleportButton.Activated:Connect(function()
 
     if not selectedPart or not selectedPart:IsDescendantOf(workspace) then
-        partName.Text = "Select a valid Part!"
+        partName.Text = "SELECT A VALID PART!"
         return
     end
 
     local character = player.Character
-    if not character then return end
+    local root = character and character:FindFirstChild("HumanoidRootPart")
 
-    local root = character:FindFirstChild("HumanoidRootPart")
     if not root then return end
 
-    local destination = selectedPart.CFrame * CFrame.new(
-        0,
-        selectedPart.Size.Y / 2 + 4,
-        0
+    root.CFrame = selectedPart.CFrame * CFrame.new(
+        0,selectedPart.Size.Y/2 + 4,0
     )
-
-    root.CFrame = destination
-
 end)
 
--- CLOSE
-closeButton.Activated:Connect(function()
-    gui:Destroy()
+--==================================================
+-- REOPEN BUTTON
+--==================================================
+
+local reopen = Instance.new("TextButton")
+reopen.Name = "OpenTeleport"
+reopen.Size = UDim2.fromOffset(48,35)
+reopen.Position = UDim2.new(1,-58,0.5,0)
+reopen.BackgroundColor3 = Color3.fromRGB(55,110,180)
+reopen.Text = "TP"
+reopen.TextColor3 = Color3.new(1,1,1)
+reopen.Font = Enum.Font.GothamBold
+reopen.TextSize = 13
+reopen.Parent = gui
+
+Instance.new("UICorner",reopen).CornerRadius = UDim.new(0,8)
+
+reopen.Activated:Connect(function()
+    main.Visible = not main.Visible
 end)
 
-print("TELEPORT TESTER LOADED!")
+print("TELEPORT TESTER + SAVED PARTS LOADED")
