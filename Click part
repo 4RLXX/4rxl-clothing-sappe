@@ -1,0 +1,191 @@
+
+--==================================================
+-- TELEPORT TESTER
+-- 100% LOCALSCRIPT
+--==================================================
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+local selectedPart = nil
+local selecting = false
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "TeleportTesterGUI"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- MAIN FRAME
+local main = Instance.new("Frame")
+main.Size = UDim2.fromOffset(400, 390)
+main.Position = UDim2.new(0.5, -200, 0.5, -195)
+main.BackgroundColor3 = Color3.fromRGB(24,24,24)
+main.BorderSizePixel = 0
+main.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0,15)
+corner.Parent = main
+
+-- TITLE
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,50)
+title.BackgroundColor3 = Color3.fromRGB(35,35,35)
+title.Text = "TELEPORT TESTER"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 19
+title.Parent = main
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0,12)
+titleCorner.Parent = title
+
+-- FUNCTION BUTTON
+local function createButton(name,text,pos,size,color)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Size = size
+    button.Position = pos
+    button.BackgroundColor3 = color
+    button.Text = text
+    button.TextColor3 = Color3.new(1,1,1)
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 14
+    button.BorderSizePixel = 0
+    button.Parent = main
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0,8)
+    c.Parent = button
+
+    return button
+end
+
+-- SELECT BUTTON
+local selectButton = createButton(
+    "SelectPart",
+    "SELECT PART",
+    UDim2.fromOffset(20,75),
+    UDim2.fromOffset(360,45),
+    Color3.fromRGB(55,110,180)
+)
+
+-- PART PREVIEW
+local preview = Instance.new("Frame")
+preview.Size = UDim2.fromOffset(360,115)
+preview.Position = UDim2.fromOffset(20,135)
+preview.BackgroundColor3 = Color3.fromRGB(38,38,38)
+preview.BorderSizePixel = 0
+preview.Parent = main
+
+local previewCorner = Instance.new("UICorner")
+previewCorner.CornerRadius = UDim.new(0,10)
+previewCorner.Parent = preview
+
+local partName = Instance.new("TextLabel")
+partName.Size = UDim2.new(1,-20,0,35)
+partName.Position = UDim2.fromOffset(10,10)
+partName.BackgroundTransparency = 1
+partName.Text = "No Part Selected"
+partName.TextColor3 = Color3.new(1,1,1)
+partName.Font = Enum.Font.GothamBold
+partName.TextSize = 16
+partName.Parent = preview
+
+local coordinates = Instance.new("TextLabel")
+coordinates.Size = UDim2.new(1,-20,0,45)
+coordinates.Position = UDim2.fromOffset(10,55)
+coordinates.BackgroundTransparency = 1
+coordinates.Text = "X: - | Y: - | Z: -"
+coordinates.TextColor3 = Color3.fromRGB(180,180,180)
+coordinates.Font = Enum.Font.Gotham
+coordinates.TextSize = 13
+coordinates.Parent = preview
+
+-- TELEPORT BUTTON
+local teleportButton = createButton(
+    "Teleport",
+    "TELEPORT",
+    UDim2.fromOffset(20,270),
+    UDim2.fromOffset(360,48),
+    Color3.fromRGB(45,145,85)
+)
+
+-- CLOSE BUTTON
+local closeButton = createButton(
+    "Close",
+    "CLOSE",
+    UDim2.fromOffset(20,330),
+    UDim2.fromOffset(360,40),
+    Color3.fromRGB(160,55,55)
+)
+
+-- SELECT MODE
+selectButton.MouseButton1Click:Connect(function()
+    selecting = not selecting
+
+    if selecting then
+        selectButton.Text = "CLICK ON A PART..."
+        selectButton.BackgroundColor3 = Color3.fromRGB(180,110,40)
+    else
+        selectButton.Text = "SELECT PART"
+        selectButton.BackgroundColor3 = Color3.fromRGB(55,110,180)
+    end
+end)
+
+-- CLICK ON PART
+mouse.Button1Down:Connect(function()
+    if not selecting then return end
+
+    local target = mouse.Target
+
+    if target and target:IsA("BasePart") then
+        selectedPart = target
+        selecting = false
+
+        selectButton.Text = "SELECT PART"
+        selectButton.BackgroundColor3 = Color3.fromRGB(55,110,180)
+
+        partName.Text = "Selected: " .. target.Name
+
+        local p = target.Position
+
+        coordinates.Text = string.format(
+            "X: %.1f | Y: %.1f | Z: %.1f",
+            p.X,p.Y,p.Z
+        )
+    end
+end)
+
+-- TELEPORT
+teleportButton.MouseButton1Click:Connect(function()
+    if not selectedPart or not selectedPart.Parent then
+        partName.Text = "Please select a Part!"
+        return
+    end
+
+    local character = player.Character
+    if not character then return end
+
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    root.CFrame = selectedPart.CFrame + Vector3.new(
+        0,
+        selectedPart.Size.Y/2 + 4,
+        0
+    )
+end)
+
+-- CLOSE
+closeButton.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+print("Teleport Tester loaded!")
