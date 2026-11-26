@@ -1,6 +1,6 @@
 
 --==================================================
--- TELEPORT TESTER
+-- TELEPORT TESTER MOBILE + PC
 -- 100% LOCALSCRIPT
 --==================================================
 
@@ -13,6 +13,8 @@ local mouse = player:GetMouse()
 local selectedPart = nil
 local selecting = false
 
+local isMobile = UserInputService.TouchEnabled
+
 -- GUI
 local gui = Instance.new("ScreenGui")
 gui.Name = "TeleportTesterGUI"
@@ -22,8 +24,9 @@ gui.Parent = player:WaitForChild("PlayerGui")
 
 -- MAIN FRAME
 local main = Instance.new("Frame")
-main.Size = UDim2.fromOffset(400, 390)
-main.Position = UDim2.new(0.5, -200, 0.5, -195)
+main.Size = isMobile and UDim2.fromOffset(290,310) or UDim2.fromOffset(400,390)
+main.Position = UDim2.new(0.5,0,0.5,0)
+main.AnchorPoint = Vector2.new(0.5,0.5)
 main.BackgroundColor3 = Color3.fromRGB(24,24,24)
 main.BorderSizePixel = 0
 main.Parent = gui
@@ -34,29 +37,29 @@ corner.Parent = main
 
 -- TITLE
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,0,0,50)
+title.Size = UDim2.new(1,0,0,42)
 title.BackgroundColor3 = Color3.fromRGB(35,35,35)
 title.Text = "TELEPORT TESTER"
 title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 19
+title.TextSize = 16
 title.Parent = main
 
 local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0,12)
 titleCorner.Parent = title
 
--- FUNCTION BUTTON
-local function createButton(name,text,pos,size,color)
+-- BUTTON FUNCTION
+local function createButton(name,text,y,height,color)
     local button = Instance.new("TextButton")
     button.Name = name
-    button.Size = size
-    button.Position = pos
+    button.Size = UDim2.new(1,-30,0,height)
+    button.Position = UDim2.fromOffset(15,y)
     button.BackgroundColor3 = color
     button.Text = text
     button.TextColor3 = Color3.new(1,1,1)
     button.Font = Enum.Font.GothamBold
-    button.TextSize = 14
+    button.TextSize = 13
     button.BorderSizePixel = 0
     button.Parent = main
 
@@ -67,19 +70,19 @@ local function createButton(name,text,pos,size,color)
     return button
 end
 
--- SELECT BUTTON
+-- SELECT
 local selectButton = createButton(
     "SelectPart",
     "SELECT PART",
-    UDim2.fromOffset(20,75),
-    UDim2.fromOffset(360,45),
+    55,
+    40,
     Color3.fromRGB(55,110,180)
 )
 
--- PART PREVIEW
+-- PREVIEW
 local preview = Instance.new("Frame")
-preview.Size = UDim2.fromOffset(360,115)
-preview.Position = UDim2.fromOffset(20,135)
+preview.Size = UDim2.new(1,-30,0,100)
+preview.Position = UDim2.fromOffset(15,110)
 preview.BackgroundColor3 = Color3.fromRGB(38,38,38)
 preview.BorderSizePixel = 0
 preview.Parent = main
@@ -89,45 +92,46 @@ previewCorner.CornerRadius = UDim.new(0,10)
 previewCorner.Parent = preview
 
 local partName = Instance.new("TextLabel")
-partName.Size = UDim2.new(1,-20,0,35)
-partName.Position = UDim2.fromOffset(10,10)
+partName.Size = UDim2.new(1,-10,0,35)
+partName.Position = UDim2.fromOffset(5,8)
 partName.BackgroundTransparency = 1
 partName.Text = "No Part Selected"
 partName.TextColor3 = Color3.new(1,1,1)
 partName.Font = Enum.Font.GothamBold
-partName.TextSize = 16
+partName.TextSize = 13
+partName.TextWrapped = true
 partName.Parent = preview
 
 local coordinates = Instance.new("TextLabel")
-coordinates.Size = UDim2.new(1,-20,0,45)
-coordinates.Position = UDim2.fromOffset(10,55)
+coordinates.Size = UDim2.new(1,-10,0,35)
+coordinates.Position = UDim2.fromOffset(5,52)
 coordinates.BackgroundTransparency = 1
 coordinates.Text = "X: - | Y: - | Z: -"
 coordinates.TextColor3 = Color3.fromRGB(180,180,180)
 coordinates.Font = Enum.Font.Gotham
-coordinates.TextSize = 13
+coordinates.TextSize = 11
 coordinates.Parent = preview
 
--- TELEPORT BUTTON
+-- TELEPORT
 local teleportButton = createButton(
     "Teleport",
     "TELEPORT",
-    UDim2.fromOffset(20,270),
-    UDim2.fromOffset(360,48),
+    225,
+    38,
     Color3.fromRGB(45,145,85)
 )
 
--- CLOSE BUTTON
+-- CLOSE
 local closeButton = createButton(
     "Close",
     "CLOSE",
-    UDim2.fromOffset(20,330),
-    UDim2.fromOffset(360,40),
+    270,
+    28,
     Color3.fromRGB(160,55,55)
 )
 
 -- SELECT MODE
-selectButton.MouseButton1Click:Connect(function()
+selectButton.Activated:Connect(function()
     selecting = not selecting
 
     if selecting then
@@ -139,7 +143,7 @@ selectButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- CLICK ON PART
+-- SELECT PART (PC + MOBILE)
 mouse.Button1Down:Connect(function()
     if not selecting then return end
 
@@ -152,7 +156,7 @@ mouse.Button1Down:Connect(function()
         selectButton.Text = "SELECT PART"
         selectButton.BackgroundColor3 = Color3.fromRGB(55,110,180)
 
-        partName.Text = "Selected: " .. target.Name
+        partName.Text = "Selected: "..target.Name
 
         local p = target.Position
 
@@ -164,7 +168,7 @@ mouse.Button1Down:Connect(function()
 end)
 
 -- TELEPORT
-teleportButton.MouseButton1Click:Connect(function()
+teleportButton.Activated:Connect(function()
     if not selectedPart or not selectedPart.Parent then
         partName.Text = "Please select a Part!"
         return
@@ -184,8 +188,8 @@ teleportButton.MouseButton1Click:Connect(function()
 end)
 
 -- CLOSE
-closeButton.MouseButton1Click:Connect(function()
+closeButton.Activated:Connect(function()
     gui:Destroy()
 end)
 
-print("Teleport Tester loaded!")
+print("Teleport Tester Mobile loaded!")
