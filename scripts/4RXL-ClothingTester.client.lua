@@ -350,19 +350,26 @@ end
 
 local function cleanID(id)
 	id = tostring(id or "")
-
-	id = id:gsub("rbxassetid://", "")
 	id = id:gsub("%s+", "")
 
 	if id == "" then
 		return nil
 	end
 
-	if not tonumber(id) then
+	-- Accepte les formats Roblox courants :
+	-- 123456789, rbxassetid://123456789,
+	-- https://www.roblox.com/asset/?id=123456789,
+	-- ou toute chaîne contenant un ID numérique.
+	local numericID = id:match("[?&]id=(%d+)")
+		or id:match("rbxassetid://(%d+)")
+		or id:match("^(%d+)$")
+		or id:match("(%d+)")
+
+	if not numericID then
 		return nil
 	end
 
-	return tonumber(id)
+	return tonumber(numericID)
 end
 
 local function getCharacter()
@@ -1616,17 +1623,15 @@ refreshOutfits = function()
 
 		equipSaved.MouseButton1Click:Connect(function()
 
-			shirtBox.Text =
-				tostring(outfit.shirtID or "")
+			-- Utilise les IDs nettoyés, même pour les anciennes tenues
+			-- sauvegardées avec une URL complète ou un préfixe.
+			local savedShirtID = cleanID(outfit.shirtID) or cleanID(outfit.shirt)
+			local savedPantsID = cleanID(outfit.pantsID) or cleanID(outfit.pants)
 
-			shirtTemplateBox.Text =
-				tostring(outfit.shirt or "")
-
-			pantsBox.Text =
-				tostring(outfit.pantsID or "")
-
-			pantsTemplateBox.Text =
-				tostring(outfit.pants or "")
+			shirtBox.Text = savedShirtID and tostring(savedShirtID) or ""
+			shirtTemplateBox.Text = savedShirtID and tostring(savedShirtID) or ""
+			pantsBox.Text = savedPantsID and tostring(savedPantsID) or ""
+			pantsTemplateBox.Text = savedPantsID and tostring(savedPantsID) or ""
 
 			equipClothes()
 		end)
@@ -1774,11 +1779,12 @@ saveButton.MouseButton1Click:Connect(function()
 			"Tenue "
 			.. tostring(#savedOutfits + 1),
 
+		-- Stocke une valeur Roblox propre, sans ancien préfixe/URL.
 		shirt =
-			shirtTemplate,
+			shirtID ~= "" and ("rbxassetid://" .. tostring(shirtID)) or "",
 
 		pants =
-			pantsTemplate,
+			pantsID ~= "" and ("rbxassetid://" .. tostring(pantsID)) or "",
 
 		shirtID =
 			shirtID,
